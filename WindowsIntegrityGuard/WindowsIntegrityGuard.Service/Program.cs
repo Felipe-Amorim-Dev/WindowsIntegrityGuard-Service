@@ -1,7 +1,9 @@
+using WindowsIntegrityGuard.Core.Services;
 using WindowsIntegrityGuard.Service;
 
 var builder = Host.CreateApplicationBuilder(args);
 
+builder.Services.AddSingleton<ServiceStateManager>();
 builder.Services.AddHostedService<Worker>();
 
 var host = builder.Build();
