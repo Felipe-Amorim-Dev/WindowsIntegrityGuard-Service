@@ -11,6 +11,8 @@ namespace WindowsIntegrityGuard.Core.Models
     {
         public IntegrityStatus Status { get; init; } = IntegrityStatus.NotStarted;
         public string Message { get; init; } = string.Empty;
+        public string Output { get; init; } = string.Empty;
+        public int? ExitCode { get; init; }
         public DateTimeOffset StartedAt { get; init; }
         public DateTimeOffset FinishedAt { get; init; }
         public bool RequiresRepair => Status == IntegrityStatus.Corrupted;

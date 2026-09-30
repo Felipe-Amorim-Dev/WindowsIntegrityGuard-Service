@@ -1,6 +1,7 @@
 using Serilog;
 using Serilog.Events;
 using WindowsIntegrityGuard.Core.Interfaces;
+using WindowsIntegrityGuard.Service.Scanners;
 using WindowsIntegrityGuard.Core.Services;
 using WindowsIntegrityGuard.Service;
 
@@ -24,6 +25,8 @@ builder.Services.AddSerilog((services, configuration) => configuration
     .WriteTo.File(logFilePath, rollingInterval: RollingInterval.Day, retainedFileCountLimit: 14, shared: true));
 
 builder.Services.AddSingleton<ServiceStateManager>();
+builder.Services.AddSingleton<IIntegrityScanner, IntegrityScanner>();
+builder.Services.AddSingleton<IIntegrityScanner, SfcIntegrityScanner>();
 builder.Services.AddHostedService<Worker>();
 
 var host = builder.Build();
