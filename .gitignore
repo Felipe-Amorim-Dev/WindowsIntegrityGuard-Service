@@ -1,0 +1,22 @@
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# .NET
+bin/
+obj/
+TestResults/
+
+# Build
+Debug/
+Release/
+
+# Logs
+*.log
+
+# Sistema
+Thumbs.db
+.DS_Store
