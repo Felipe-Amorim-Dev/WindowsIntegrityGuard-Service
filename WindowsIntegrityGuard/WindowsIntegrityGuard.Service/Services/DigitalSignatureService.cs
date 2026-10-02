@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -8,7 +8,7 @@ using WindowsIntegrityGuard.Core.Enums;
 using WindowsIntegrityGuard.Core.Interfaces;
 using WindowsIntegrityGuard.Core.Models;
 
-namespace WindowsIntegrityGuard.Core.Services
+namespace WindowsIntegrityGuard.Service.Services
 {
     public sealed class DigitalSignatureService : IDigitalSignatureService
     {

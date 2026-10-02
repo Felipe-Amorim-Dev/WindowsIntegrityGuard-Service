@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -62,9 +62,16 @@ namespace WindowsIntegrityGuard.Service.Scanners
                 }
                 catch (OperationCanceledException)
                 {
-                    if (!process.HasExited)
+                    try
                     {
-                        process.Kill(entireProcessTree: true);
+                        if (!process.HasExited)
+                        {
+                            process.Kill(entireProcessTree: true);
+                        }
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        // O processo pode ter terminado entre a verificação e o Kill.
                     }
 
                     await process.WaitForExitAsync();
@@ -81,7 +88,7 @@ namespace WindowsIntegrityGuard.Service.Scanners
                 string output = await outputTask;
                 string error = await errorTask;
                 string fullOutput = string.IsNullOrWhiteSpace(error) ? output : $"{output}{Environment.NewLine}{error}";
-                IntegrityStatus status = ClassifyResult(fullOutput, process.ExitCode);
+                IntegrityStatus status = SfcResultParser.Classify(fullOutput, process.ExitCode);
 
                 return new IntegrityScanResult
                 {
@@ -101,36 +108,6 @@ namespace WindowsIntegrityGuard.Service.Scanners
             {
                 return CreateResult(IntegrityStatus.Failed, ex.Message, startedAt);
             }
-        }
-
-        private static IntegrityStatus ClassifyResult(string output, int exitCode)
-        {
-            if (string.IsNullOrWhiteSpace(output))
-            {
-                return IntegrityStatus.Inconclusive;
-            }
-
-            if (Contains(output, "could not perform the requested operation", "não pôde executar a operação solicitada"))
-            {
-                return IntegrityStatus.Inconclusive;
-            }
-
-            if (Contains(output, "found integrity violations", "encontrou violações de integridade", "encontrou arquivos corrompidos"))
-            {
-                return IntegrityStatus.Corrupted;
-            }
-
-            if (exitCode == 0 && Contains(output, "did not find any integrity violations", "não encontrou nenhuma violação de integridade"))
-            {
-                return IntegrityStatus.Healthy;
-            }
-
-            return IntegrityStatus.Inconclusive;
-        }
-
-        private static bool Contains(string text, params string[] expressions)
-        {
-            return expressions.Any(expression => text.Contains(expression, StringComparison.OrdinalIgnoreCase));
         }
 
         private static string GetMessage(IntegrityStatus status)

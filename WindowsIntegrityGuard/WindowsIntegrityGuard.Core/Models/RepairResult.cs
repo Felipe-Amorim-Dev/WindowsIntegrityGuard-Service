@@ -7,14 +7,13 @@ using WindowsIntegrityGuard.Core.Enums;
 
 namespace WindowsIntegrityGuard.Core.Models
 {
-    public sealed class IntegrityScanResult
+    public sealed class RepairResult
     {
-        public IntegrityStatus Status { get; init; } = IntegrityStatus.NotStarted;
+        public RepairStatus Status { get; init; } = RepairStatus.NotStarted;
         public string Message { get; init; } = string.Empty;
-        public string Output { get; init; } = string.Empty;
         public int? ExitCode { get; init; }
         public DateTimeOffset StartedAt { get; init; }
         public DateTimeOffset FinishedAt { get; init; }
-        public bool RequiresRepairReview => Status == IntegrityStatus.Corrupted;
+        public bool RebootRequired { get; init; }
     }
 }

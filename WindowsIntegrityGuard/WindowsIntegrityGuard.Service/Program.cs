@@ -2,6 +2,7 @@ using Serilog;
 using Serilog.Events;
 using WindowsIntegrityGuard.Core.Interfaces;
 using WindowsIntegrityGuard.Service.Scanners;
+using WindowsIntegrityGuard.Service.Services;
 using WindowsIntegrityGuard.Core.Services;
 using WindowsIntegrityGuard.Service;
 
@@ -28,6 +29,12 @@ builder.Services.AddSingleton<ServiceStateManager>();
 builder.Services.AddSingleton<IIntegrityScanner, SfcIntegrityScanner>();
 builder.Services.AddSingleton<IFileHashService, FileHashService>();
 builder.Services.AddSingleton<IDigitalSignatureService, DigitalSignatureService>();
+builder.Services.AddSingleton<IIntegrityResultClassifier, IntegrityResultClassifier>();
+builder.Services.AddSingleton<ISfcRepairService, SfcRepairService>();
+builder.Services.AddSingleton<IDismRepairService, DismRepairService>();
+builder.Services.AddSingleton<IRepairValidationService, RepairValidationService>();
+builder.Services.AddSingleton<IRepairEngine, RepairEngine>();
+
 builder.Services.AddHostedService<Worker>();
 
 var host = builder.Build();
