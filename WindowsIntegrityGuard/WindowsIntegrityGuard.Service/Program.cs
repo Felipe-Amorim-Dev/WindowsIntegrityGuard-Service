@@ -33,7 +33,10 @@ builder.Services.AddSingleton<IIntegrityResultClassifier, IntegrityResultClassif
 builder.Services.AddSingleton<ISfcRepairService, SfcRepairService>();
 builder.Services.AddSingleton<IDismRepairService, DismRepairService>();
 builder.Services.AddSingleton<IRepairValidationService, RepairValidationService>();
+builder.Services.AddSingleton<IRepairHistoryService, RepairHistoryService>();
 builder.Services.AddSingleton<IRepairEngine, RepairEngine>();
+
+builder.Services.AddHostedService<Worker>();
 
 builder.Services.AddHostedService<Worker>();
 
