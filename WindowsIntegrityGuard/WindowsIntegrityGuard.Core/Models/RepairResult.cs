@@ -15,5 +15,8 @@ namespace WindowsIntegrityGuard.Core.Models
         public DateTimeOffset StartedAt { get; init; }
         public DateTimeOffset FinishedAt { get; init; }
         public bool RebootRequired { get; init; }
+        public bool SfcExecuted { get; init; }
+        public bool DismExecuted { get; init; }
+        public bool ValidationSuccessful { get; init; }
     }
 }

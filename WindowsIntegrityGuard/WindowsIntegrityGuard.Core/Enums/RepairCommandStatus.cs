@@ -6,7 +6,10 @@ using System.Threading.Tasks;
 
 namespace WindowsIntegrityGuard.Core.Enums
 {
-    internal class RepairCommandStatus
+    public enum RepairCommandStatus
     {
+        Success,
+        Failed,
+        TimedOut
     }
 }
