@@ -188,6 +188,60 @@ namespace WindowsIntegrityGuard.Tests
             Assert.Single(history.Results);
         }
 
+        [Fact]
+        public async Task RepairAsync_ShouldFail_WhenSecondSfcFails()
+        {
+            var sfc = new FakeSfcRepairService(CreateSuccessCommandResult(), CreateFailedCommandResult());
+            var dism = new FakeDismRepairService(CreateSuccessCommandResult());
+            var validation = new FakeRepairValidationService(CreateValidationResult(false));
+            var history = new FakeRepairHistoryService();
+
+            var engine = new RepairEngine(NullLogger<RepairEngine>.Instance, sfc, dism, validation, history);
+
+            var request = new RepairRequest
+            {
+                Assessment = CreateAssessment(IntegrityStatus.Corrupted),
+                AllowRepair = true
+            };
+
+            RepairResult result = await engine.RepairAsync(request);
+
+            Assert.Equal(RepairStatus.Failed, result.Status);
+            Assert.True(result.SfcExecuted);
+            Assert.True(result.DismExecuted);
+            Assert.False(result.ValidationSuccessful);
+            Assert.Equal(2, sfc.ExecutionCount);
+            Assert.Equal(1, dism.ExecutionCount);
+            Assert.Single(history.Results);
+        }
+
+        [Fact]
+        public async Task RepairAsync_ShouldThrowOperationCanceledException_WhenCancelled()
+        {
+            var sfc = new FakeSfcRepairService(CreateSuccessCommandResult());
+            var dism = new FakeDismRepairService(CreateSuccessCommandResult());
+            var validation = new FakeRepairValidationService(CreateValidationResult(true));
+            var history = new FakeRepairHistoryService();
+
+            var engine = new RepairEngine(NullLogger<RepairEngine>.Instance, sfc, dism, validation, history);
+
+            var request = new RepairRequest
+            {
+                Assessment = CreateAssessment(IntegrityStatus.Corrupted),
+                AllowRepair = true
+            };
+
+            using var cancellationTokenSource = new CancellationTokenSource();
+
+            cancellationTokenSource.Cancel();
+
+            await Assert.ThrowsAsync<OperationCanceledException>(() => engine.RepairAsync(request, cancellationTokenSource.Token));
+
+            Assert.Empty(history.Results);
+        }
+
+        #region Metodos privados
+
         private static IntegrityAssessment CreateAssessment(IntegrityStatus status)
         {
             return new IntegrityAssessment
@@ -229,5 +283,7 @@ namespace WindowsIntegrityGuard.Tests
                 ValidatedAt = DateTimeOffset.UtcNow
             };
         }
+
+        #endregion
     }
 }
