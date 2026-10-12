@@ -5,23 +5,23 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using WindowsIntegrityGuard.Core.Interfaces;
 using WindowsIntegrityGuard.Core.Interfaces.Ipc;
 using WindowsIntegrityGuard.Core.Models.Ipc;
-using WindowsIntegrityGuard.Core.Services;
 
 namespace WindowsIntegrityGuard.Service.Communication
 {
     public sealed class NamedPipeServer : BackgroundService
     {
         private const string PipeName = "WindowsIntegrityGuard";
-        private readonly ILogger<NamedPipeServer> _logger;
-        private readonly ServiceStateManager _stateManager;
+        private readonly ILogger<NamedPipeServer> _logger;        
+        private readonly IIpcRequestHandler _requestHandler;
         private readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web);
 
-        public NamedPipeServer(ILogger<NamedPipeServer> logger, ServiceStateManager stateManager)
+        public NamedPipeServer(ILogger<NamedPipeServer> logger, IIpcRequestHandler requestHandler)
         {
             _logger = logger;
-            _stateManager = stateManager;
+            _requestHandler = requestHandler;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -85,48 +85,11 @@ namespace WindowsIntegrityGuard.Service.Communication
                 return;
             }
 
-            IpcResponse response = ProcessRequest(request);
+            IpcResponse response = _requestHandler.Handle(request);
 
             await WriteResponseAsync(writer, response);
         }
-
-        private IpcResponse ProcessRequest(IpcRequest request)
-        {
-            string command = request.Command.Trim().ToLowerInvariant();
-
-            return command switch
-            {
-                "ping" => CreatePingResponse(),
-                "status" => CreateStatusResponse(),
-                _ => CreateErrorResponse("Comando não reconhecido.")
-            };
-        }
-
-        private static IpcResponse CreatePingResponse()
-        {
-            return new IpcResponse
-            {
-                Success = true,
-                Message = "Windows Integrity Guard Service disponível."
-            };
-        }
-
-        private IpcResponse CreateStatusResponse()
-        {
-            var status = new ServiceStatusSnapshot
-            {
-                Status = _stateManager.Status,
-                Timestamp = DateTimeOffset.UtcNow
-            };
-
-            return new IpcResponse
-            {
-                Success = true,
-                Message = "Status obtido com sucesso.",
-                Data = status
-            };
-        }
-
+               
         private static IpcResponse CreateErrorResponse(string message)
         {
             return new IpcResponse

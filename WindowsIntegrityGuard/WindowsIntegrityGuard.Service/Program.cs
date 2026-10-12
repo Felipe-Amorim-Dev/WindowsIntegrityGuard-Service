@@ -27,6 +27,7 @@ builder.Services.AddSerilog((services, configuration) => configuration
     .WriteTo.File(logFilePath, rollingInterval: RollingInterval.Day, retainedFileCountLimit: 14, shared: true));
 
 builder.Services.AddSingleton<ServiceStateManager>();
+builder.Services.AddSingleton<IIpcRequestHandler, IpcRequestHandler>();
 builder.Services.AddSingleton<IIntegrityScanner, SfcIntegrityScanner>();
 builder.Services.AddSingleton<IFileHashService, FileHashService>();
 builder.Services.AddSingleton<IDigitalSignatureService, DigitalSignatureService>();
@@ -36,11 +37,8 @@ builder.Services.AddSingleton<IDismRepairService, DismRepairService>();
 builder.Services.AddSingleton<IRepairValidationService, RepairValidationService>();
 builder.Services.AddSingleton<IRepairHistoryService, RepairHistoryService>();
 builder.Services.AddSingleton<IRepairEngine, RepairEngine>();
+builder.Services.AddHostedService<Worker>();
 builder.Services.AddHostedService<NamedPipeServer>();
-
-builder.Services.AddHostedService<Worker>();
-
-builder.Services.AddHostedService<Worker>();
 
 var host = builder.Build();
 
