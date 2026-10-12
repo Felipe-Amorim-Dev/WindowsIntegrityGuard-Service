@@ -5,6 +5,7 @@ using WindowsIntegrityGuard.Service.Scanners;
 using WindowsIntegrityGuard.Service.Services;
 using WindowsIntegrityGuard.Core.Services;
 using WindowsIntegrityGuard.Service;
+using WindowsIntegrityGuard.Service.Communication;
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -35,6 +36,7 @@ builder.Services.AddSingleton<IDismRepairService, DismRepairService>();
 builder.Services.AddSingleton<IRepairValidationService, RepairValidationService>();
 builder.Services.AddSingleton<IRepairHistoryService, RepairHistoryService>();
 builder.Services.AddSingleton<IRepairEngine, RepairEngine>();
+builder.Services.AddHostedService<NamedPipeServer>();
 
 builder.Services.AddHostedService<Worker>();
 
