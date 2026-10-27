@@ -51,6 +51,20 @@ dotnet test WindowsIntegrityGuard/WindowsIntegrityGuard.sln
 - [WindowsIntegrityGuard](https://github.com/Felipe-Amorim-Dev/WindowsIntegrityGuard) — Repositório agregador
 - [WindowsIntegrityGuard-UI](https://github.com/Felipe-Amorim-Dev/WindowsIntegrityGuard-UI) — Interface WPF
 
+## 🏗️ Arquitetura e componentes
+
+- WindowsIntegrityGuard.Core define interfaces de varredura, classificação, serviços SFC/DISM e RepairEngine.
+- WindowsIntegrityGuard.Service hospeda Worker, NamedPipeServer, scanners e implementações Windows.
+- WindowsIntegrityGuard.Tests contém testes de componentes e simulações (fakes).
+- Serilog grava logs em ProgramData/WindowsIntegrityGuard/Logs, com rotação diária.
+
+### Fluxo técnico
+
+1. O IPC utiliza Named Pipe WindowsIntegrityGuard e mensagens JSON.
+2. RepairEngine exige avaliação de corrupção e autorização de reparo.
+3. Sequência: SFC → validação → DISM quando necessário → novo SFC → validação final.
+4. Histórico e resultados são registrados pelas abstrações de serviço.
+
 <a id="licenca"></a>
 ## 📄 Licença
 
