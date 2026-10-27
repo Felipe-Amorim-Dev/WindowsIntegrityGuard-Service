@@ -1,27 +1,66 @@
-# Windows Integrity Guard — Service
+<h1 align="center">🛡️ Windows Integrity Guard — Service</h1>
 
-[![Compilação e testes no Windows](https://github.com/Felipe-Amorim-Dev/WindowsIntegrityGuard-Service/actions/workflows/ci.yml/badge.svg)](https://github.com/Felipe-Amorim-Dev/WindowsIntegrityGuard-Service/actions/workflows/ci.yml)
+<p align="center"><em>Serviço .NET para rotinas de integridade e reparo controlado do Windows.</em></p>
 
-A execução de 34 testes unitários foi confirmada no GitHub Actions em outubro de 2026. Esses testes usam isolamento de componentes; não validam reparos em uma instalação real do Windows.
+<p align="center">🇧🇷 Português | 🇺🇸 <a href="README.en.md">English</a></p>
 
+<p align="center"><img src="https://img.shields.io/badge/licen%C3%A7a-MIT-006bed?style=flat-square" alt="MIT" /> <img src="https://img.shields.io/github/last-commit/Felipe-Amorim-Dev/WindowsIntegrityGuard-Service?style=flat-square&color=006bed" alt="Last commit" /></p>
 
-**Status: prototype / Em desenvolvimento.** .NET service and core functionality for controlled Windows integrity verification and repair. Part of the [main project](https://github.com/Felipe-Amorim-Dev/WindowsIntegrityGuard).
+<p align="center"><a href="#sobre">Sobre</a> • <a href="#tecnologias">Tecnologias</a> • <a href="#como-rodar">Como rodar</a> • <a href="#licenca">Licença</a> • <a href="#autor">Autor</a></p>
 
-## Structure
-- `WindowsIntegrityGuard/WindowsIntegrityGuard.Core` — core contracts and repair logic
-- `WindowsIntegrityGuard/WindowsIntegrityGuard.Service` — service host
-- `WindowsIntegrityGuard/WindowsIntegrityGuard.Tests` — existing source tests and fakes/mocks
-- `WindowsIntegrityGuard/WindowsIntegrityGuard.sln` — solution
+---
 
-## Development and verification
+<a id="sobre"></a>
+## 📖 Sobre
+
+Componente de serviço do Windows Integrity Guard em .NET 9. Divide contratos e lógica no Core, execução no Service e verificações automatizadas no projeto Tests. Integra hospedagem como Windows Service e logs Serilog.
+
+## ✨ Funcionalidades
+
+- Serviço em segundo plano
+- Verificação de integridade e fluxo de reparo controlado
+- Testes automatizados do Core
+
+## 🛠️ Tecnologias
+
+![C#](https://img.shields.io/badge/C%23-006bed?style=for-the-badge) ![.NET 9](https://img.shields.io/badge/.NET_9-006bed?style=for-the-badge) ![Windows Services](https://img.shields.io/badge/Windows_Services-006bed?style=for-the-badge) ![Serilog](https://img.shields.io/badge/Serilog-006bed?style=for-the-badge)
+
+## 📦 Pré-requisitos
+
+Windows e SDK .NET 9 (componentes de desktop .NET para WPF).
+
+<a id="como-rodar"></a>
+## 🚀 Como rodar
+
 ```bash
+git clone https://github.com/Felipe-Amorim-Dev/WindowsIntegrityGuard-Service.git
+cd WindowsIntegrityGuard-Service
 dotnet restore WindowsIntegrityGuard/WindowsIntegrityGuard.sln
 dotnet build WindowsIntegrityGuard/WindowsIntegrityGuard.sln
 dotnet test WindowsIntegrityGuard/WindowsIntegrityGuard.sln
 ```
 
-Windows-specific API usage may require a Windows environment. Tests should isolate system-repair commands; never execute destructive or privileged repair operations in a CI job.
+## 🧪 Testes
 
-**Safety:** not production ready. Validate permissions, command invocation, user consent, repair outcomes and recovery paths in a disposable Windows VM before deployment.
+```bash
+dotnet test WindowsIntegrityGuard/WindowsIntegrityGuard.sln
+```
 
-**PT-BR:** Serviço experimental de análise e reparo. Testes existentes não substituem validação operacional no Windows real.
+## 🔗 Repositórios relacionados
+
+- [WindowsIntegrityGuard](https://github.com/Felipe-Amorim-Dev/WindowsIntegrityGuard) — Repositório agregador
+- [WindowsIntegrityGuard-UI](https://github.com/Felipe-Amorim-Dev/WindowsIntegrityGuard-UI) — Interface WPF
+
+<a id="licenca"></a>
+## 📄 Licença
+
+Distribuído sob a [licença MIT](LICENSE).
+
+<a id="autor"></a>
+## 👤 Autor
+
+**Felipe Figueiredo Amorim** — Desenvolvedor Full Stack.
+
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Felipe%20Amorim-0A66C2?style=for-the-badge&logo=linkedin)](https://www.linkedin.com/in/felipe-amorim-dev/) [![E-mail](https://img.shields.io/badge/E--mail-contato-006bed?style=for-the-badge)](mailto:felipe.f.amorim@outlook.com)
+
+<p align="center"><strong>Obrigado por visitar! / Thanks for visiting!</strong></p>
