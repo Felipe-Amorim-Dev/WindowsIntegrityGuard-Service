@@ -1,5 +1,10 @@
 # Windows Integrity Guard — Service
 
+[![Compilação e testes no Windows](https://github.com/Felipe-Amorim-Dev/WindowsIntegrityGuard-Service/actions/workflows/ci.yml/badge.svg)](https://github.com/Felipe-Amorim-Dev/WindowsIntegrityGuard-Service/actions/workflows/ci.yml)
+
+A execução de 34 testes unitários foi confirmada no GitHub Actions em outubro de 2026. Esses testes usam isolamento de componentes; não validam reparos em uma instalação real do Windows.
+
+
 **Status: prototype / Em desenvolvimento.** .NET service and core functionality for controlled Windows integrity verification and repair. Part of the [main project](https://github.com/Felipe-Amorim-Dev/WindowsIntegrityGuard).
 
 ## Structure
