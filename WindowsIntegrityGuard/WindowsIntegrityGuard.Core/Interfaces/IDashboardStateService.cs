@@ -10,5 +10,8 @@ namespace WindowsIntegrityGuard.Core.Interfaces
     public interface IDashboardStateService
     {
         DashboardSnapshot GetSnapshot();
+        void MarkScanStarted();
+        void MarkScanCompleted(IntegrityScanResult result);
+        void MarkScanFailed();
     }
 }

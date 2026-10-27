@@ -1,5 +1,6 @@
 using WindowsIntegrityGuard.Core.Enums;
 using WindowsIntegrityGuard.Core.Interfaces;
+using WindowsIntegrityGuard.Core.Models;
 using WindowsIntegrityGuard.Core.Services;
 
 namespace WindowsIntegrityGuard.Service;
@@ -10,13 +11,15 @@ public sealed class Worker : BackgroundService
     private readonly IConfiguration _configuration;
     private readonly ServiceStateManager _stateManager;
     private readonly IIntegrityScanner _scanner;
+    private readonly IDashboardStateService _dashboardStateService;
 
-    public Worker(ILogger<Worker> logger, IConfiguration configuration, ServiceStateManager stateManager, IIntegrityScanner scanner)
+    public Worker(ILogger<Worker> logger, IConfiguration configuration, ServiceStateManager stateManager, IIntegrityScanner scanner, IDashboardStateService dashboardStateService)
     {
         _logger = logger;
         _configuration = configuration;
         _stateManager = stateManager;
         _scanner = scanner;
+        _dashboardStateService = dashboardStateService;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -30,9 +33,13 @@ public sealed class Worker : BackgroundService
 
             if (enableStartupScan && _stateManager.TryTransition(ServiceStatus.Scanning))
             {
+                _dashboardStateService.MarkScanStarted();
+
                 _logger.LogInformation("Iniciando verificação de integridade com SFC.");
 
-                var result = await _scanner.ScanAsync(stoppingToken);
+                IntegrityScanResult result = await _scanner.ScanAsync(stoppingToken);
+
+                _dashboardStateService.MarkScanCompleted(result);
 
                 if (result.Status == IntegrityStatus.Failed)
                 {
@@ -43,11 +50,6 @@ public sealed class Worker : BackgroundService
                 {
                     _stateManager.TryTransition(ServiceStatus.Completed);
                     _logger.LogInformation("Resultado da verificação: {Status}. {Message}", result.Status, result.Message);
-
-                    if (result.Status == IntegrityStatus.Corrupted || result.Status == IntegrityStatus.Inconclusive)
-                    {
-                        _logger.LogWarning("A verificação requer atenção. ExitCode: {ExitCode}", result.ExitCode);
-                    }
                 }
 
                 _logger.LogInformation("Duração da verificação: {Duration}", result.FinishedAt - result.StartedAt);
