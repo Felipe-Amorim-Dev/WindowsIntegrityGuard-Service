@@ -6,16 +6,19 @@ using System.Threading.Tasks;
 using WindowsIntegrityGuard.Core.Interfaces.Ipc;
 using WindowsIntegrityGuard.Core.Interfaces;
 using WindowsIntegrityGuard.Core.Models.Ipc;
+using WindowsIntegrityGuard.Core.Models;
 
 namespace WindowsIntegrityGuard.Core.Services
 {
     public sealed class IpcRequestHandler : IIpcRequestHandler
     {
         private readonly ServiceStateManager _stateManager;
+        private readonly IDashboardStateService _dashboardStateService;
 
-        public IpcRequestHandler(ServiceStateManager stateManager)
+        public IpcRequestHandler(ServiceStateManager stateManager, IDashboardStateService dashboardStateService)
         {
             _stateManager = stateManager;
+            _dashboardStateService = dashboardStateService;
         }
 
         public IpcResponse Handle(IpcRequest request)
@@ -33,10 +36,12 @@ namespace WindowsIntegrityGuard.Core.Services
             {
                 "ping" => CreatePingResponse(),
                 "status" => CreateStatusResponse(),
+                "dashboard" => CreateDashboardResponse(),
                 _ => CreateErrorResponse("Comando não reconhecido.")
             };
         }
 
+        #region Metodos Privados
         private static IpcResponse CreatePingResponse()
         {
             return new IpcResponse
@@ -70,5 +75,18 @@ namespace WindowsIntegrityGuard.Core.Services
                 Message = message
             };
         }
+
+        private IpcResponse CreateDashboardResponse()
+        {
+            DashboardSnapshot snapshot = _dashboardStateService.GetSnapshot();
+
+            return new IpcResponse
+            {
+                Success = true,
+                Message = "Dashboard obtido com sucesso.",
+                Data = snapshot
+            };
+        }
+        #endregion
     }
 }
