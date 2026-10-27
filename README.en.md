@@ -51,6 +51,35 @@ dotnet test WindowsIntegrityGuard/WindowsIntegrityGuard.sln
 - [WindowsIntegrityGuard](https://github.com/Felipe-Amorim-Dev/WindowsIntegrityGuard) — Repositório agregador
 - [WindowsIntegrityGuard-UI](https://github.com/Felipe-Amorim-Dev/WindowsIntegrityGuard-UI) — Interface WPF
 
+## 🏗️ Service architecture
+
+| Layer | Responsibility |
+| --- | --- |
+| `WindowsIntegrityGuard.Core` | Contracts, integrity assessment, classification and repair orchestration |
+| `WindowsIntegrityGuard.Service` | Windows Service host, integrity scanners, SFC/DISM adapters and IPC server |
+| `WindowsIntegrityGuard.Tests` | Unit tests using isolated services and fakes |
+
+The service host registers `Worker`, `NamedPipeServer`, `RepairEngine`, `SfcIntegrityScanner`, `DigitalSignatureService` and other adapters via dependency injection. Serilog writes daily rolling files under the Windows common application data directory.
+
+### Integrity and repair workflow
+
+1. A client communicates over the `WindowsIntegrityGuard` Named Pipe using JSON.
+2. The request handler returns service information using the IPC response contract.
+3. The integrity scanner and result classifier provide a structured assessment.
+4. `RepairEngine` checks `IsRepairCandidate` and `AllowRepair` before invoking a repair.
+5. Authorized repair follows SFC → validation → DISM if needed → second SFC → final validation.
+6. Repair outcomes are stored through the repair history abstraction.
+
+### Build and tests
+
+```bash
+dotnet restore WindowsIntegrityGuard/WindowsIntegrityGuard.sln
+dotnet build WindowsIntegrityGuard/WindowsIntegrityGuard.sln
+dotnet test WindowsIntegrityGuard/WindowsIntegrityGuard.sln
+```
+
+The desktop UI is maintained in [WindowsIntegrityGuard-UI](https://github.com/Felipe-Amorim-Dev/WindowsIntegrityGuard-UI).
+
 <a id="licenca"></a>
 ## 📄 License
 
