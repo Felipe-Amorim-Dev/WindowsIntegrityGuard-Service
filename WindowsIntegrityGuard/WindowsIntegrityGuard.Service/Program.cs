@@ -28,11 +28,13 @@ builder.Services.AddSerilog((services, configuration) => configuration
 
 builder.Services.AddSingleton<ServiceStateManager>();
 builder.Services.AddSingleton<IDashboardStateService, DashboardStateService>();
+builder.Services.AddSingleton<IScanHistoryService, ScanHistoryService>();
 builder.Services.AddSingleton<IIpcRequestHandler, IpcRequestHandler>();
 builder.Services.AddSingleton<IIntegrityScanner, SfcIntegrityScanner>();
 builder.Services.AddSingleton<IFileHashService, FileHashService>();
 builder.Services.AddSingleton<IDigitalSignatureService, DigitalSignatureService>();
 builder.Services.AddSingleton<IIntegrityResultClassifier, IntegrityResultClassifier>();
+builder.Services.AddSingleton<IScanCoordinator, ScanCoordinator>();
 builder.Services.AddSingleton<ISfcRepairService, SfcRepairService>();
 builder.Services.AddSingleton<IDismRepairService, DismRepairService>();
 builder.Services.AddSingleton<IRepairValidationService, RepairValidationService>();

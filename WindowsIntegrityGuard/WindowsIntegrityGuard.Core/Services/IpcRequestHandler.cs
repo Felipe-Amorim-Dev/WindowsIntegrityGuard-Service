@@ -14,20 +14,22 @@ namespace WindowsIntegrityGuard.Core.Services
     {
         private readonly ServiceStateManager _stateManager;
         private readonly IDashboardStateService _dashboardStateService;
+        private readonly IScanCoordinator _scanCoordinator;
+        private readonly IScanHistoryService _scanHistoryService;
 
-        public IpcRequestHandler(ServiceStateManager stateManager, IDashboardStateService dashboardStateService)
+        public IpcRequestHandler(ServiceStateManager stateManager, IDashboardStateService dashboardStateService, IScanCoordinator scanCoordinator, IScanHistoryService scanHistoryService)
         {
             _stateManager = stateManager;
             _dashboardStateService = dashboardStateService;
+            _scanCoordinator = scanCoordinator;
+            _scanHistoryService = scanHistoryService;
         }
 
-        public IpcResponse Handle(IpcRequest request)
+        public async Task<IpcResponse> HandleAsync(IpcRequest request, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(request);
-
             if (string.IsNullOrWhiteSpace(request.Command))
             {
-                return CreateErrorResponse("Comando não informado.");
+                return CreateErrorResponse("Comando inválido.");
             }
 
             string command = request.Command.Trim().ToLowerInvariant();
@@ -37,6 +39,8 @@ namespace WindowsIntegrityGuard.Core.Services
                 "ping" => CreatePingResponse(),
                 "status" => CreateStatusResponse(),
                 "dashboard" => CreateDashboardResponse(),
+                "start-scan" => CreateStartScanResponse(),
+                "scan-history" => await CreateScanHistoryResponseAsync(cancellationToken),
                 _ => CreateErrorResponse("Comando não reconhecido.")
             };
         }
@@ -85,6 +89,38 @@ namespace WindowsIntegrityGuard.Core.Services
                 Success = true,
                 Message = "Dashboard obtido com sucesso.",
                 Data = snapshot
+            };
+        }
+
+        private IpcResponse CreateStartScanResponse()
+        {
+            bool started = _scanCoordinator.TryStartScan();
+
+            if (!started)
+            {
+                return new IpcResponse
+                {
+                    Success = false,
+                    Message = "Não foi possível iniciar a verificação. Existe uma operação em andamento."
+                };
+            }
+
+            return new IpcResponse
+            {
+                Success = true,
+                Message = "Verificação iniciada com sucesso."
+            };
+        }
+
+        private async Task<IpcResponse> CreateScanHistoryResponseAsync(CancellationToken cancellationToken)
+        {
+            IReadOnlyList<ScanHistoryEntry> history = await _scanHistoryService.GetAllAsync(cancellationToken);
+
+            return new IpcResponse
+            {
+                Success = true,
+                Message = "Histórico obtido com sucesso.",
+                Data = history
             };
         }
         #endregion

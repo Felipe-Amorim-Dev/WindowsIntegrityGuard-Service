@@ -10,6 +10,6 @@ namespace WindowsIntegrityGuard.Core.Interfaces
 {
     public interface IIpcRequestHandler
     {
-        IpcResponse Handle(IpcRequest request);
+        Task<IpcResponse> HandleAsync(IpcRequest request, CancellationToken cancellationToken = default);
     }
 }
