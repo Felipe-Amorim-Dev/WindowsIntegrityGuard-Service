@@ -1,5 +1,6 @@
 using Serilog;
 using Serilog.Events;
+using System.Text;
 using WindowsIntegrityGuard.Core.Interfaces;
 using WindowsIntegrityGuard.Service.Scanners;
 using WindowsIntegrityGuard.Service.Services;
@@ -7,7 +8,9 @@ using WindowsIntegrityGuard.Core.Services;
 using WindowsIntegrityGuard.Service;
 using WindowsIntegrityGuard.Service.Communication;
 
-var builder = Host.CreateApplicationBuilder(args);
+Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+
+HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 
 string logDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "WindowsIntegrityGuard", "Logs");
 string logFilePath = Path.Combine(logDirectory, "service-.log");

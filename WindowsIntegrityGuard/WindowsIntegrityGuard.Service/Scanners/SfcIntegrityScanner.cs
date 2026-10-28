@@ -1,10 +1,6 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using WindowsIntegrityGuard.Core.Enums;
 using WindowsIntegrityGuard.Core.Interfaces;
 using WindowsIntegrityGuard.Core.Models;
@@ -14,9 +10,14 @@ namespace WindowsIntegrityGuard.Service.Scanners
     public sealed class SfcIntegrityScanner : IIntegrityScanner
     {
         private readonly TimeSpan _timeout;
+        private readonly ILogger<SfcIntegrityScanner> _logger;
+        private readonly SfcCbsLogReader _cbsLogReader;
 
-        public SfcIntegrityScanner(IConfiguration configuration)
+        public SfcIntegrityScanner(IConfiguration configuration, ILogger<SfcIntegrityScanner> logger, SfcCbsLogReader cbsLogReader)
         {
+            _logger = logger;
+            _cbsLogReader = cbsLogReader;
+
             int minutes = configuration.GetValue<int>("WindowsIntegrityGuard:ScanTimeoutMinutes", 60);
             _timeout = TimeSpan.FromMinutes(minutes > 0 ? minutes : 60);
         }
@@ -87,7 +88,21 @@ namespace WindowsIntegrityGuard.Service.Scanners
 
                 string output = await outputTask;
                 string error = await errorTask;
+
+                if (!string.IsNullOrWhiteSpace(output))
+                {
+                    _logger.LogInformation("Saída do SFC: {Output}", output);
+                }
+
+                if (!string.IsNullOrWhiteSpace(error))
+                {
+                    _logger.LogWarning("Saída de erro do SFC: {Error}", error);
+                }
+
                 string fullOutput = string.IsNullOrWhiteSpace(error) ? output : $"{output}{Environment.NewLine}{error}";
+
+                _logger.LogInformation("SFC finalizado com ExitCode {ExitCode}.", process.ExitCode);
+
                 IntegrityStatus status = SfcResultParser.Classify(fullOutput, process.ExitCode);
 
                 return new IntegrityScanResult
@@ -106,9 +121,12 @@ namespace WindowsIntegrityGuard.Service.Scanners
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Falha durante a execução do SFC.");
                 return CreateResult(IntegrityStatus.Failed, ex.Message, startedAt);
             }
         }
+
+        #region Metodos Privados
 
         private static string GetMessage(IntegrityStatus status)
         {
@@ -131,5 +149,7 @@ namespace WindowsIntegrityGuard.Service.Scanners
                 FinishedAt = DateTimeOffset.UtcNow
             };
         }
+
+        #endregion
     }
 }

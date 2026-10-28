@@ -85,7 +85,7 @@ namespace WindowsIntegrityGuard.Service.Communication
                 return;
             }
 
-            IpcResponse response = _requestHandler.Handle(request);
+            IpcResponse response = await _requestHandler.HandleAsync(request, cancellationToken);
 
             await WriteResponseAsync(writer, response);
         }
