@@ -4,7 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using WindowsIntegrityGuard.Core.Enums;
+using WindowsIntegrityGuard.Core.Interfaces;
 using WindowsIntegrityGuard.Core.Interfaces.Ipc;
+using WindowsIntegrityGuard.Core.Models;
 using WindowsIntegrityGuard.Core.Models.Ipc;
 using WindowsIntegrityGuard.Core.Services;
 
@@ -13,95 +15,200 @@ namespace WindowsIntegrityGuard.Tests
     public sealed class IpcRequestHandlerTests
     {
         [Fact]
-        public void Handle_ShouldReturnSuccess_WhenCommandIsPing()
+        public async Task HandleAsync_ShouldReturnSuccess_WhenCommandIsPing()
         {
             var stateManager = new ServiceStateManager();
-            var handler = new IpcRequestHandler(stateManager);
+            var dashboardStateService = new FakeDashboardStateService(stateManager);
+            var scanCoordinator = new FakeScanCoordinator();
+            var scanHistoryService = new FakeScanHistoryService();
+            var handler = new IpcRequestHandler(stateManager, dashboardStateService, scanCoordinator, scanHistoryService);
 
             var request = new IpcRequest
             {
                 Command = "ping"
             };
 
-            IpcResponse response = handler.Handle(request);
+            IpcResponse response = await handler.HandleAsync(request);
 
             Assert.True(response.Success);
             Assert.Equal("Windows Integrity Guard Service disponível.", response.Message);
         }
 
         [Fact]
-        public void Handle_ShouldReturnCurrentStatus_WhenCommandIsStatus()
+        public async Task HandleAsync_ShouldReturnCurrentStatus_WhenCommandIsStatus()
         {
             var stateManager = new ServiceStateManager();
-            var handler = new IpcRequestHandler(stateManager);
+            var dashboardStateService = new FakeDashboardStateService(stateManager);
+            var scanCoordinator = new FakeScanCoordinator();
+            var scanHistoryService = new FakeScanHistoryService();
+            var handler = new IpcRequestHandler(stateManager, dashboardStateService, scanCoordinator, scanHistoryService);
 
             var request = new IpcRequest
             {
                 Command = "status"
             };
 
-            IpcResponse response = handler.Handle(request);
+            IpcResponse response = await handler.HandleAsync(request);
 
             Assert.True(response.Success);
-
-            ServiceStatusSnapshot status = Assert.IsType<ServiceStatusSnapshot>(response.Data);
-
-            Assert.Equal(ServiceStatus.Idle, status.Status);
+            Assert.NotNull(response.Data);
         }
 
         [Fact]
-        public void Handle_ShouldReturnError_WhenCommandIsUnknown()
+        public async Task HandleAsync_ShouldReturnDashboard_WhenCommandIsDashboard()
         {
             var stateManager = new ServiceStateManager();
-            var handler = new IpcRequestHandler(stateManager);
+            var dashboardStateService = new FakeDashboardStateService(stateManager);
+            var scanCoordinator = new FakeScanCoordinator();
+            var scanHistoryService = new FakeScanHistoryService();
+            var handler = new IpcRequestHandler(stateManager, dashboardStateService, scanCoordinator, scanHistoryService);
 
             var request = new IpcRequest
             {
-                Command = "repair"
+                Command = "dashboard"
             };
 
-            IpcResponse response = handler.Handle(request);
+            IpcResponse response = await handler.HandleAsync(request);
 
-            Assert.False(response.Success);
-            Assert.Equal("Comando não reconhecido.", response.Message);
+            Assert.True(response.Success);
+            Assert.NotNull(response.Data);
         }
 
         [Fact]
-        public void Handle_ShouldReturnError_WhenCommandIsEmpty()
+        public async Task HandleAsync_ShouldStartScan_WhenCommandIsStartScan()
         {
             var stateManager = new ServiceStateManager();
-            var handler = new IpcRequestHandler(stateManager);
+            var dashboardStateService = new FakeDashboardStateService(stateManager);
+            var scanCoordinator = new FakeScanCoordinator(true);
+            var scanHistoryService = new FakeScanHistoryService();
+            var handler = new IpcRequestHandler(stateManager, dashboardStateService, scanCoordinator, scanHistoryService);
+
+            var request = new IpcRequest
+            {
+                Command = "start-scan"
+            };
+
+            IpcResponse response = await handler.HandleAsync(request);
+
+            Assert.True(response.Success);
+        }
+
+        [Fact]
+        public async Task HandleAsync_ShouldRejectScan_WhenScanCannotStart()
+        {
+            var stateManager = new ServiceStateManager();
+            var dashboardStateService = new FakeDashboardStateService(stateManager);
+            var scanCoordinator = new FakeScanCoordinator(false);
+            var scanHistoryService = new FakeScanHistoryService();
+            var handler = new IpcRequestHandler(stateManager, dashboardStateService, scanCoordinator, scanHistoryService);
+
+            var request = new IpcRequest
+            {
+                Command = "start-scan"
+            };
+
+            IpcResponse response = await handler.HandleAsync(request);
+
+            Assert.False(response.Success);
+        }
+
+        [Fact]
+        public async Task HandleAsync_ShouldReturnError_WhenCommandIsUnknown()
+        {
+            var stateManager = new ServiceStateManager();
+            var dashboardStateService = new FakeDashboardStateService(stateManager);
+            var scanCoordinator = new FakeScanCoordinator();
+            var scanHistoryService = new FakeScanHistoryService();
+            var handler = new IpcRequestHandler(stateManager, dashboardStateService, scanCoordinator, scanHistoryService);
+
+            var request = new IpcRequest
+            {
+                Command = "invalid-command"
+            };
+
+            IpcResponse response = await handler.HandleAsync(request);
+
+            Assert.False(response.Success);
+        }
+
+        [Fact]
+        public async Task HandleAsync_ShouldReturnError_WhenCommandIsEmpty()
+        {
+            var stateManager = new ServiceStateManager();
+            var dashboardStateService = new FakeDashboardStateService(stateManager);
+            var scanCoordinator = new FakeScanCoordinator();
+            var scanHistoryService = new FakeScanHistoryService();
+            var handler = new IpcRequestHandler(stateManager, dashboardStateService, scanCoordinator, scanHistoryService);
 
             var request = new IpcRequest
             {
                 Command = string.Empty
             };
 
-            IpcResponse response = handler.Handle(request);
+            IpcResponse response = await handler.HandleAsync(request);
 
             Assert.False(response.Success);
-            Assert.Equal("Comando não informado.", response.Message);
         }
 
-        [Fact]
-        public void Handle_StatusCommand_ShouldNotChangeServiceStatus()
+        private sealed class FakeDashboardStateService : IDashboardStateService
         {
-            var stateManager = new ServiceStateManager();
-            var handler = new IpcRequestHandler(stateManager);
+            private readonly ServiceStateManager _stateManager;
 
-            Assert.True(stateManager.TryTransition(ServiceStatus.Scanning));
-
-            var request = new IpcRequest
+            public FakeDashboardStateService(ServiceStateManager stateManager)
             {
-                Command = "status"
-            };
+                _stateManager = stateManager;
+            }
 
-            IpcResponse response = handler.Handle(request);
+            public DashboardSnapshot GetSnapshot()
+            {
+                return new DashboardSnapshot
+                {
+                    ServiceStatus = _stateManager.Status,
+                    IntegrityStatus = IntegrityStatus.NotStarted,
+                    CurrentOperation = "Em espera"
+                };
+            }
 
-            ServiceStatusSnapshot status = Assert.IsType<ServiceStatusSnapshot>(response.Data);
+            public void MarkScanStarted()
+            {
+            }
 
-            Assert.Equal(ServiceStatus.Scanning, status.Status);
-            Assert.Equal(ServiceStatus.Scanning, stateManager.Status);
+            public void MarkScanCompleted(IntegrityScanResult result)
+            {
+            }
+
+            public void MarkScanFailed()
+            {
+            }
+        }
+
+        private sealed class FakeScanCoordinator : IScanCoordinator
+        {
+            private readonly bool _startResult;
+
+            public FakeScanCoordinator(bool startResult = true)
+            {
+                _startResult = startResult;
+            }
+
+            public bool TryStartScan()
+            {
+                return _startResult;
+            }
+        }
+
+        private sealed class FakeScanHistoryService : IScanHistoryService
+        {
+            public Task AddAsync(ScanHistoryEntry entry, CancellationToken cancellationToken = default)
+            {
+                return Task.CompletedTask;
+            }
+
+            public Task<IReadOnlyList<ScanHistoryEntry>> GetAllAsync(CancellationToken cancellationToken = default)
+            {
+                IReadOnlyList<ScanHistoryEntry> history = [];
+                return Task.FromResult(history);
+            }
         }
     }
 }

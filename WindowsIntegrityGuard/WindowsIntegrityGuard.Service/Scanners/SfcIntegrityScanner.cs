@@ -29,6 +29,8 @@ namespace WindowsIntegrityGuard.Service.Scanners
 
             try
             {
+                long cbsStartOffset = _cbsLogReader.GetCurrentLength();
+
                 string windowsDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
                 string executable = Path.Combine(windowsDirectory, "System32", "sfc.exe");
 
@@ -100,10 +102,10 @@ namespace WindowsIntegrityGuard.Service.Scanners
                 }
 
                 string fullOutput = string.IsNullOrWhiteSpace(error) ? output : $"{output}{Environment.NewLine}{error}";
+                string cbsOutput = await _cbsLogReader.ReadFromOffsetAsync(cbsStartOffset, cancellationToken);
+                IntegrityStatus status = SfcCbsResultParser.Classify(cbsOutput);
 
-                _logger.LogInformation("SFC finalizado com ExitCode {ExitCode}.", process.ExitCode);
-
-                IntegrityStatus status = SfcResultParser.Classify(fullOutput, process.ExitCode);
+                _logger.LogInformation("SFC finalizado com ExitCode {ExitCode} e classificação {Status}.", process.ExitCode, status);
 
                 return new IntegrityScanResult
                 {
