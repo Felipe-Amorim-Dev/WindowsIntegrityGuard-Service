@@ -33,9 +33,13 @@ builder.Services.AddSingleton<ServiceStateManager>();
 builder.Services.AddSingleton<IDashboardStateService, DashboardStateService>();
 builder.Services.AddSingleton<IScanHistoryService, ScanHistoryService>();
 builder.Services.AddSingleton<IIpcRequestHandler, IpcRequestHandler>();
+
 builder.Services.AddSingleton<SfcCbsLogReader>();
-builder.Services.AddSingleton<IIntegrityScanner, SfcIntegrityScanner>();
+builder.Services.AddSingleton<SfcIntegrityScanner>();
 builder.Services.AddSingleton<IComponentStoreHealthService, DismComponentStoreHealthService>();
+builder.Services.AddSingleton<ISystemIntegrityClassifier, SystemIntegrityClassifier>();
+builder.Services.AddSingleton<IIntegrityScanner, HybridIntegrityScanner>();
+
 builder.Services.AddSingleton<IFileHashService, FileHashService>();
 builder.Services.AddSingleton<IDigitalSignatureService, DigitalSignatureService>();
 builder.Services.AddSingleton<IIntegrityResultClassifier, IntegrityResultClassifier>();
@@ -45,6 +49,7 @@ builder.Services.AddSingleton<IDismRepairService, DismRepairService>();
 builder.Services.AddSingleton<IRepairValidationService, RepairValidationService>();
 builder.Services.AddSingleton<IRepairHistoryService, RepairHistoryService>();
 builder.Services.AddSingleton<IRepairEngine, RepairEngine>();
+
 builder.Services.AddHostedService<Worker>();
 builder.Services.AddHostedService<NamedPipeServer>();
 
