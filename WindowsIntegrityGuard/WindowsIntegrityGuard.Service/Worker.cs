@@ -10,12 +10,14 @@ public sealed class Worker : BackgroundService
     private readonly ILogger<Worker> _logger;
     private readonly IConfiguration _configuration;
     private readonly IScanCoordinator _scanCoordinator;
+    private readonly IServiceSettingsService _serviceSettingsService;
 
-    public Worker(ILogger<Worker> logger, IConfiguration configuration, IScanCoordinator scanCoordinator)
+    public Worker(ILogger<Worker> logger, IConfiguration configuration, IScanCoordinator scanCoordinator, IServiceSettingsService serviceSettingsService)
     {
         _logger = logger;
         _configuration = configuration;
         _scanCoordinator = scanCoordinator;
+        _serviceSettingsService = serviceSettingsService;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)

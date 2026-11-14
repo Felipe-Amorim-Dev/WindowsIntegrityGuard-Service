@@ -30,6 +30,7 @@ builder.Services.AddSerilog((services, configuration) => configuration
     .WriteTo.File(logFilePath, rollingInterval: RollingInterval.Day, retainedFileCountLimit: 14, shared: true));
 
 builder.Services.AddSingleton<ServiceStateManager>();
+builder.Services.AddSingleton<IServiceSettingsService, ServiceSettingsService>();
 builder.Services.AddSingleton<IDashboardStateService, DashboardStateService>();
 builder.Services.AddSingleton<IScanHistoryService, ScanHistoryService>();
 builder.Services.AddSingleton<IIpcRequestHandler, IpcRequestHandler>();

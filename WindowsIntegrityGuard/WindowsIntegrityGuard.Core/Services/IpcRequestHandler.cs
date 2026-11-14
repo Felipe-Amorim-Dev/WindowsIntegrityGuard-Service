@@ -16,13 +16,15 @@ namespace WindowsIntegrityGuard.Core.Services
         private readonly IDashboardStateService _dashboardStateService;
         private readonly IScanCoordinator _scanCoordinator;
         private readonly IScanHistoryService _scanHistoryService;
+        private readonly IServiceSettingsService _serviceSettingsService;
 
-        public IpcRequestHandler(ServiceStateManager stateManager, IDashboardStateService dashboardStateService, IScanCoordinator scanCoordinator, IScanHistoryService scanHistoryService)
+        public IpcRequestHandler(ServiceStateManager stateManager, IDashboardStateService dashboardStateService, IScanCoordinator scanCoordinator, IScanHistoryService scanHistoryService, IServiceSettingsService serviceSettingsService)
         {
             _stateManager = stateManager;
             _dashboardStateService = dashboardStateService;
             _scanCoordinator = scanCoordinator;
             _scanHistoryService = scanHistoryService;
+            _serviceSettingsService = serviceSettingsService;
         }
 
         public async Task<IpcResponse> HandleAsync(IpcRequest request, CancellationToken cancellationToken = default)
@@ -34,6 +36,11 @@ namespace WindowsIntegrityGuard.Core.Services
 
             string command = request.Command.Trim().ToLowerInvariant();
 
+            if (request.Command.StartsWith("set-scan-on-startup:", StringComparison.OrdinalIgnoreCase))
+            {
+                return await SetScanOnStartupAsync(request.Command, cancellationToken);
+            }
+
             return command switch
             {
                 "ping" => CreatePingResponse(),
@@ -41,6 +48,7 @@ namespace WindowsIntegrityGuard.Core.Services
                 "dashboard" => CreateDashboardResponse(),
                 "start-scan" => CreateStartScanResponse(),
                 "scan-history" => await CreateScanHistoryResponseAsync(cancellationToken),
+                "get-scan-on-startup" => await GetScanOnStartupAsync(cancellationToken),
                 _ => CreateErrorResponse("Comando não reconhecido.")
             };
         }
@@ -121,6 +129,44 @@ namespace WindowsIntegrityGuard.Core.Services
                 Success = true,
                 Message = "Histórico obtido com sucesso.",
                 Data = history
+            };
+        }
+
+        private async Task<IpcResponse> GetScanOnStartupAsync(CancellationToken cancellationToken)
+        {
+            ServiceSettings settings = await _serviceSettingsService.LoadAsync(cancellationToken);
+
+            return new IpcResponse
+            {
+                Success = true,
+                Message = "Configuração carregada.",
+                Data = settings.ScanOnStartup,
+                Timestamp = DateTimeOffset.UtcNow
+            };
+        }
+
+        private async Task<IpcResponse> SetScanOnStartupAsync(string command, CancellationToken cancellationToken)
+        {
+            string value = command["set-scan-on-startup:".Length..];
+
+            if (!bool.TryParse(value, out bool enabled))
+            {
+                return new IpcResponse
+                {
+                    Success = false,
+                    Message = "Valor inválido para ScanOnStartup.",
+                    Timestamp = DateTimeOffset.UtcNow
+                };
+            }
+
+            await _serviceSettingsService.SetScanOnStartupAsync(enabled, cancellationToken);
+
+            return new IpcResponse
+            {
+                Success = true,
+                Message = enabled ? "Verificação automática habilitada." : "Verificação automática desabilitada.",
+                Data = enabled,
+                Timestamp = DateTimeOffset.UtcNow
             };
         }
         #endregion
