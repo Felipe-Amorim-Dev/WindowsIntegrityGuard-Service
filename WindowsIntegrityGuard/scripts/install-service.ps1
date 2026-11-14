@@ -33,11 +33,14 @@ Write-Host "Instalando Windows Integrity Guard..."
 
 New-Service -Name $ServiceName -BinaryPathName "`"$ExecutablePath`"" -DisplayName $DisplayName -Description $Description -StartupType Automatic
 
+Write-Host "Configurando recuperação automática..."
+
+sc.exe failure $ServiceName reset= 86400 actions= restart/5000/restart/10000/restart/30000 | Out-Null
+sc.exe failureflag $ServiceName 1 | Out-Null
+
 Write-Host "Iniciando serviço..."
 
 Start-Service -Name $ServiceName
-
-$Service = Get-Service -Name $ServiceName
 
 Write-Host ""
 Write-Host "Windows Integrity Guard instalado com sucesso."
