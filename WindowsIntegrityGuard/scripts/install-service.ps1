@@ -42,6 +42,8 @@ Write-Host "Iniciando serviço..."
 
 Start-Service -Name $ServiceName
 
+$Service = Get-Service -Name $ServiceName
+
 Write-Host ""
 Write-Host "Windows Integrity Guard instalado com sucesso."
 Write-Host "Status: $($Service.Status)"

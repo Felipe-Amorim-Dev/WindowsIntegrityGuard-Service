@@ -8,14 +8,12 @@ namespace WindowsIntegrityGuard.Service;
 public sealed class Worker : BackgroundService
 {
     private readonly ILogger<Worker> _logger;
-    private readonly IConfiguration _configuration;
     private readonly IScanCoordinator _scanCoordinator;
     private readonly IServiceSettingsService _serviceSettingsService;
 
-    public Worker(ILogger<Worker> logger, IConfiguration configuration, IScanCoordinator scanCoordinator, IServiceSettingsService serviceSettingsService)
+    public Worker(ILogger<Worker> logger, IScanCoordinator scanCoordinator, IServiceSettingsService serviceSettingsService)
     {
         _logger = logger;
-        _configuration = configuration;
         _scanCoordinator = scanCoordinator;
         _serviceSettingsService = serviceSettingsService;
     }
@@ -26,10 +24,14 @@ public sealed class Worker : BackgroundService
 
         try
         {
-            bool enableStartupScan = _configuration.GetValue<bool>("WindowsIntegrityGuard:EnableStartupScan", false);
+            ServiceSettings settings = await _serviceSettingsService.LoadAsync(stoppingToken);
 
-            if (enableStartupScan)
+            if (settings.ScanOnStartup)
             {
+                _logger.LogInformation("Verificação automática habilitada. Aguardando 2 minutos antes de iniciar.");
+
+                await Task.Delay(TimeSpan.FromMinutes(2), stoppingToken);
+
                 bool started = _scanCoordinator.TryStartScan();
 
                 if (started)
@@ -38,8 +40,12 @@ public sealed class Worker : BackgroundService
                 }
                 else
                 {
-                    _logger.LogWarning("Não foi possível iniciar a verificação automática.");
+                    _logger.LogWarning("Não foi possível iniciar a verificação automática porque existe outra operação em andamento.");
                 }
+            }
+            else
+            {
+                _logger.LogInformation("Verificação automática após inicialização desabilitada.");
             }
 
             await Task.Delay(Timeout.InfiniteTimeSpan, stoppingToken);
@@ -47,6 +53,11 @@ public sealed class Worker : BackgroundService
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
         {
             _logger.LogInformation("Encerramento solicitado pelo sistema.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Falha inesperada durante a execução do Worker.");
+            throw;
         }
         finally
         {

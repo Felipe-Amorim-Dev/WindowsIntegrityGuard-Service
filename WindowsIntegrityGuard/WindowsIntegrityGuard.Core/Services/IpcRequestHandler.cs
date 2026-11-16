@@ -169,6 +169,28 @@ namespace WindowsIntegrityGuard.Core.Services
                 Timestamp = DateTimeOffset.UtcNow
             };
         }
+
+        private sealed class FakeServiceSettingsService : IServiceSettingsService
+        {
+            private ServiceSettings _settings = new();
+
+            public Task<ServiceSettings> LoadAsync(CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult(_settings);
+            }
+
+            public Task SaveAsync(ServiceSettings settings, CancellationToken cancellationToken = default)
+            {
+                _settings = settings;
+                return Task.CompletedTask;
+            }
+
+            public Task SetScanOnStartupAsync(bool enabled, CancellationToken cancellationToken = default)
+            {
+                _settings.ScanOnStartup = enabled;
+                return Task.CompletedTask;
+            }
+        }
         #endregion
     }
 }

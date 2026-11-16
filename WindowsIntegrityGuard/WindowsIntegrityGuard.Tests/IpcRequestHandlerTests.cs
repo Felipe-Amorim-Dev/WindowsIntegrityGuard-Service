@@ -21,7 +21,8 @@ namespace WindowsIntegrityGuard.Tests
             var dashboardStateService = new FakeDashboardStateService(stateManager);
             var scanCoordinator = new FakeScanCoordinator();
             var scanHistoryService = new FakeScanHistoryService();
-            var handler = new IpcRequestHandler(stateManager, dashboardStateService, scanCoordinator, scanHistoryService);
+            var handler = new IpcRequestHandler(stateManager, dashboardStateService, scanCoordinator, scanHistoryService, serviceSettingsService);
+            var serviceSettingsService = new FakeServiceSettingsService();
 
             var request = new IpcRequest
             {
@@ -41,7 +42,8 @@ namespace WindowsIntegrityGuard.Tests
             var dashboardStateService = new FakeDashboardStateService(stateManager);
             var scanCoordinator = new FakeScanCoordinator();
             var scanHistoryService = new FakeScanHistoryService();
-            var handler = new IpcRequestHandler(stateManager, dashboardStateService, scanCoordinator, scanHistoryService);
+            var handler = new IpcRequestHandler(stateManager, dashboardStateService, scanCoordinator, scanHistoryService, serviceSettingsService);
+            var serviceSettingsService = new FakeServiceSettingsService();
 
             var request = new IpcRequest
             {
@@ -61,7 +63,8 @@ namespace WindowsIntegrityGuard.Tests
             var dashboardStateService = new FakeDashboardStateService(stateManager);
             var scanCoordinator = new FakeScanCoordinator();
             var scanHistoryService = new FakeScanHistoryService();
-            var handler = new IpcRequestHandler(stateManager, dashboardStateService, scanCoordinator, scanHistoryService);
+            var handler = new IpcRequestHandler(stateManager, dashboardStateService, scanCoordinator, scanHistoryService, serviceSettingsService);
+            var serviceSettingsService = new FakeServiceSettingsService();
 
             var request = new IpcRequest
             {
@@ -81,7 +84,8 @@ namespace WindowsIntegrityGuard.Tests
             var dashboardStateService = new FakeDashboardStateService(stateManager);
             var scanCoordinator = new FakeScanCoordinator(true);
             var scanHistoryService = new FakeScanHistoryService();
-            var handler = new IpcRequestHandler(stateManager, dashboardStateService, scanCoordinator, scanHistoryService);
+            var handler = new IpcRequestHandler(stateManager, dashboardStateService, scanCoordinator, scanHistoryService, serviceSettingsService);
+            var serviceSettingsService = new FakeServiceSettingsService();
 
             var request = new IpcRequest
             {
@@ -100,7 +104,8 @@ namespace WindowsIntegrityGuard.Tests
             var dashboardStateService = new FakeDashboardStateService(stateManager);
             var scanCoordinator = new FakeScanCoordinator(false);
             var scanHistoryService = new FakeScanHistoryService();
-            var handler = new IpcRequestHandler(stateManager, dashboardStateService, scanCoordinator, scanHistoryService);
+            var handler = new IpcRequestHandler(stateManager, dashboardStateService, scanCoordinator, scanHistoryService, serviceSettingsService);
+            var serviceSettingsService = new FakeServiceSettingsService();
 
             var request = new IpcRequest
             {
@@ -119,7 +124,8 @@ namespace WindowsIntegrityGuard.Tests
             var dashboardStateService = new FakeDashboardStateService(stateManager);
             var scanCoordinator = new FakeScanCoordinator();
             var scanHistoryService = new FakeScanHistoryService();
-            var handler = new IpcRequestHandler(stateManager, dashboardStateService, scanCoordinator, scanHistoryService);
+            var handler = new IpcRequestHandler(stateManager, dashboardStateService, scanCoordinator, scanHistoryService, serviceSettingsService);
+            var serviceSettingsService = new FakeServiceSettingsService();
 
             var request = new IpcRequest
             {
@@ -138,7 +144,8 @@ namespace WindowsIntegrityGuard.Tests
             var dashboardStateService = new FakeDashboardStateService(stateManager);
             var scanCoordinator = new FakeScanCoordinator();
             var scanHistoryService = new FakeScanHistoryService();
-            var handler = new IpcRequestHandler(stateManager, dashboardStateService, scanCoordinator, scanHistoryService);
+            var handler = new IpcRequestHandler(stateManager, dashboardStateService, scanCoordinator, scanHistoryService, serviceSettingsService);
+            var serviceSettingsService = new FakeServiceSettingsService();
 
             var request = new IpcRequest
             {
@@ -146,6 +153,58 @@ namespace WindowsIntegrityGuard.Tests
             };
 
             IpcResponse response = await handler.HandleAsync(request);
+
+            Assert.False(response.Success);
+        }
+
+        [Fact]
+        public async Task HandleAsync_ShouldReturnScanOnStartup_WhenCommandIsGetScanOnStartup()
+        {
+            var stateManager = new ServiceStateManager();
+            var dashboardStateService = new FakeDashboardStateService(stateManager);
+            var scanCoordinator = new FakeScanCoordinator();
+            var scanHistoryService = new FakeScanHistoryService();
+            var serviceSettingsService = new FakeServiceSettingsService();
+            await serviceSettingsService.SetScanOnStartupAsync(true);
+
+            var handler = new IpcRequestHandler(stateManager, dashboardStateService, scanCoordinator, scanHistoryService, serviceSettingsService);
+
+            IpcResponse response = await handler.HandleAsync(new IpcRequest { Command = "get-scan-on-startup" });
+
+            Assert.True(response.Success);
+            Assert.Equal(true, response.Data);
+        }
+
+        [Fact]
+        public async Task HandleAsync_ShouldEnableScanOnStartup()
+        {
+            var stateManager = new ServiceStateManager();
+            var dashboardStateService = new FakeDashboardStateService(stateManager);
+            var scanCoordinator = new FakeScanCoordinator();
+            var scanHistoryService = new FakeScanHistoryService();
+            var serviceSettingsService = new FakeServiceSettingsService();
+
+            var handler = new IpcRequestHandler(stateManager, dashboardStateService, scanCoordinator, scanHistoryService, serviceSettingsService);
+
+            IpcResponse response = await handler.HandleAsync(new IpcRequest { Command = "set-scan-on-startup:true" });
+            ServiceSettings settings = await serviceSettingsService.LoadAsync();
+
+            Assert.True(response.Success);
+            Assert.True(settings.ScanOnStartup);
+        }
+
+        [Fact]
+        public async Task HandleAsync_ShouldRejectInvalidScanOnStartupValue()
+        {
+            var stateManager = new ServiceStateManager();
+            var dashboardStateService = new FakeDashboardStateService(stateManager);
+            var scanCoordinator = new FakeScanCoordinator();
+            var scanHistoryService = new FakeScanHistoryService();
+            var serviceSettingsService = new FakeServiceSettingsService();
+
+            var handler = new IpcRequestHandler(stateManager, dashboardStateService, scanCoordinator, scanHistoryService, serviceSettingsService);
+
+            IpcResponse response = await handler.HandleAsync(new IpcRequest { Command = "set-scan-on-startup:invalid" });
 
             Assert.False(response.Success);
         }
