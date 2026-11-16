@@ -24,14 +24,14 @@ public sealed class Worker : BackgroundService
 
         try
         {
+            _logger.LogInformation("Aguardando 2 minutos antes de avaliar a verificação automática.");
+
+            await Task.Delay(TimeSpan.FromMinutes(2), stoppingToken);
+
             ServiceSettings settings = await _serviceSettingsService.LoadAsync(stoppingToken);
 
             if (settings.ScanOnStartup)
             {
-                _logger.LogInformation("Verificação automática habilitada. Aguardando 2 minutos antes de iniciar.");
-
-                await Task.Delay(TimeSpan.FromMinutes(2), stoppingToken);
-
                 bool started = _scanCoordinator.TryStartScan();
 
                 if (started)
