@@ -52,11 +52,24 @@ namespace WindowsIntegrityGuard.Core.Services
             lock (_lock)
             {
                 _integrityStatus = IntegrityStatus.Scanning;
-                _currentOperation = "Verificação em andamento";
-                _scanProgress = null;
+                _currentOperation = "Preparando verificação...";
+                _scanProgress = 5;
                 _filesVerified = null;
                 _problemsFound = null;
                 _problemsRepaired = null;
+            }
+        }
+
+        public void UpdateOperation(string operation, double? progress = null)
+        {
+            lock (_lock)
+            {
+                _currentOperation = operation;
+
+                if (progress.HasValue)
+                {
+                    _scanProgress = Math.Clamp(progress.Value, 0, 100);
+                }
             }
         }
 
@@ -70,7 +83,7 @@ namespace WindowsIntegrityGuard.Core.Services
                 _currentOperation = GetCompletedOperation(result.Status);
                 _lastScanAt = result.FinishedAt;
                 _lastScanDuration = result.FinishedAt - result.StartedAt;
-                _scanProgress = null;
+                _scanProgress = 100;
                 _filesVerified = null;
                 _problemsFound = result.Status == IntegrityStatus.Healthy ? 0 : null;
                 _problemsRepaired = null;
@@ -88,6 +101,7 @@ namespace WindowsIntegrityGuard.Core.Services
         }
 
         #region Metodos Privados
+
         private static string GetCompletedOperation(IntegrityStatus status)
         {
             return status switch
@@ -99,6 +113,7 @@ namespace WindowsIntegrityGuard.Core.Services
                 _ => "Operação concluída"
             };
         }
+
         #endregion
     }
 }

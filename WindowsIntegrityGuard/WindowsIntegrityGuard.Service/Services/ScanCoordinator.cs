@@ -37,11 +37,13 @@ namespace WindowsIntegrityGuard.Service.Services
             {
                 if (_activeScan is { IsCompleted: false })
                 {
+                    _logger.LogWarning("Tentativa de iniciar nova verificação enquanto outra ainda está em execução.");
                     return false;
                 }
 
                 if (_stateManager.Status is ServiceStatus.Scanning or ServiceStatus.Repairing)
                 {
+                    _logger.LogWarning("Tentativa de iniciar verificação enquanto o Service está no estado {Status}.", _stateManager.Status);
                     return false;
                 }
 

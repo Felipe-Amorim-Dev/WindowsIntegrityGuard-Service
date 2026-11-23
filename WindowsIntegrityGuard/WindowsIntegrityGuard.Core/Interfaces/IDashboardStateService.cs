@@ -11,6 +11,7 @@ namespace WindowsIntegrityGuard.Core.Interfaces
     {
         DashboardSnapshot GetSnapshot();
         void MarkScanStarted();
+        void UpdateOperation(string operation, double? progress = null);
         void MarkScanCompleted(IntegrityScanResult result);
         void MarkScanFailed();
     }

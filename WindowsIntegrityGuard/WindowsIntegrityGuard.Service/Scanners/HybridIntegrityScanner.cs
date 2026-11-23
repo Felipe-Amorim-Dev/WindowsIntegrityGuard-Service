@@ -15,13 +15,15 @@ namespace WindowsIntegrityGuard.Service.Scanners
         private readonly IComponentStoreHealthService _componentStoreHealthService;
         private readonly ISystemIntegrityClassifier _classifier;
         private readonly ILogger<HybridIntegrityScanner> _logger;
+        private readonly IDashboardStateService _dashboardStateService;
 
-        public HybridIntegrityScanner(SfcIntegrityScanner sfcScanner, IComponentStoreHealthService componentStoreHealthService, ISystemIntegrityClassifier classifier, ILogger<HybridIntegrityScanner> logger)
+        public HybridIntegrityScanner(SfcIntegrityScanner sfcScanner, IComponentStoreHealthService componentStoreHealthService, ISystemIntegrityClassifier classifier, ILogger<HybridIntegrityScanner> logger, IDashboardStateService dashboardStateService)
         {
             _sfcScanner = sfcScanner;
             _componentStoreHealthService = componentStoreHealthService;
             _classifier = classifier;
             _logger = logger;
+            _dashboardStateService = dashboardStateService;
         }
 
         public async Task<IntegrityScanResult> ScanAsync(CancellationToken cancellationToken = default)
@@ -32,23 +34,32 @@ namespace WindowsIntegrityGuard.Service.Scanners
             {
                 _logger.LogInformation("Iniciando verificação híbrida de integridade.");
 
+                _dashboardStateService.UpdateOperation("Executando verificação SFC...", 15);
+
                 IntegrityScanResult sfcResult = await _sfcScanner.ScanAsync(cancellationToken);
 
                 _logger.LogInformation("Resultado SFC: {Status}.", sfcResult.Status);
 
                 if (sfcResult.Status == IntegrityStatus.Failed)
                 {
+                    _dashboardStateService.UpdateOperation("Falha durante a verificação SFC.", 100);
                     return CreateResult(IntegrityStatus.Failed, "A verificação SFC falhou.", sfcResult, startedAt);
                 }
+
+                _dashboardStateService.UpdateOperation("Verificando Component Store com DISM...", 65);
 
                 ComponentStoreHealthResult dismResult = await _componentStoreHealthService.CheckHealthAsync(cancellationToken);
 
                 _logger.LogInformation("Resultado do Component Store: {Status}.", dismResult.Status);
 
+                _dashboardStateService.UpdateOperation("Classificando resultado da verificação...", 90);
+
                 IntegrityStatus finalStatus = _classifier.Classify(sfcResult.Status, dismResult.Status);
                 string message = GetMessage(finalStatus, sfcResult.Status, dismResult.Status);
 
                 _logger.LogInformation("Classificação final de integridade: {Status}.", finalStatus);
+
+                _dashboardStateService.UpdateOperation("Finalizando verificação...", 95);
 
                 return CreateResult(finalStatus, message, sfcResult, startedAt);
             }
@@ -59,6 +70,8 @@ namespace WindowsIntegrityGuard.Service.Scanners
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Falha inesperada durante a verificação híbrida de integridade.");
+
+                _dashboardStateService.UpdateOperation("Falha inesperada durante a verificação.", null);
 
                 return new IntegrityScanResult
                 {
