@@ -34,9 +34,9 @@ namespace WindowsIntegrityGuard.Service.Scanners
             {
                 _logger.LogInformation("Iniciando verificação híbrida de integridade.");
 
-                _dashboardStateService.UpdateOperation("Executando verificação SFC...", 15);
+                _dashboardStateService.UpdateOperation("Preparando verificação de arquivos protegidos...", 10);
 
-                IntegrityScanResult sfcResult = await _sfcScanner.ScanAsync(cancellationToken);
+                IntegrityScanResult sfcResult = await ExecuteSfcAsync(cancellationToken);
 
                 _logger.LogInformation("Resultado SFC: {Status}.", sfcResult.Status);
 
@@ -46,9 +46,7 @@ namespace WindowsIntegrityGuard.Service.Scanners
                     return CreateResult(IntegrityStatus.Failed, "A verificação SFC falhou.", sfcResult, startedAt);
                 }
 
-                _dashboardStateService.UpdateOperation("Verificando Component Store com DISM...", 65);
-
-                ComponentStoreHealthResult dismResult = await _componentStoreHealthService.CheckHealthAsync(cancellationToken);
+                ComponentStoreHealthResult dismResult = await ExecuteComponentStoreScanAsync(cancellationToken);
 
                 _logger.LogInformation("Resultado do Component Store: {Status}.", dismResult.Status);
 
@@ -70,7 +68,6 @@ namespace WindowsIntegrityGuard.Service.Scanners
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Falha inesperada durante a verificação híbrida de integridade.");
-
                 _dashboardStateService.UpdateOperation("Falha inesperada durante a verificação.", null);
 
                 return new IntegrityScanResult
@@ -84,6 +81,57 @@ namespace WindowsIntegrityGuard.Service.Scanners
         }
 
         #region Metodos Privados
+
+        private async Task<IntegrityScanResult> ExecuteSfcAsync(CancellationToken cancellationToken)
+        {
+            _dashboardStateService.UpdateOperation("Verificando arquivos protegidos do Windows...", 15);
+
+            Task<IntegrityScanResult> scanTask = _sfcScanner.ScanAsync(cancellationToken);
+            Task progressTask = MonitorProgressAsync(scanTask, 15, 60, "Verificando arquivos protegidos do Windows...", cancellationToken);
+
+            IntegrityScanResult result = await scanTask;
+            await progressTask;
+
+            _dashboardStateService.UpdateOperation("Verificação dos arquivos protegidos concluída.", 60);
+
+            return result;
+        }
+
+        private async Task<ComponentStoreHealthResult> ExecuteComponentStoreScanAsync(CancellationToken cancellationToken)
+        {
+            _dashboardStateService.UpdateOperation("Preparando verificação do Component Store...", 65);
+
+            Task<ComponentStoreHealthResult> scanTask = _componentStoreHealthService.CheckHealthAsync(cancellationToken);
+            Task progressTask = MonitorProgressAsync(scanTask, 65, 88, "Verificando Component Store do Windows...", cancellationToken);
+
+            ComponentStoreHealthResult result = await scanTask;
+            await progressTask;
+
+            _dashboardStateService.UpdateOperation("Verificação do Component Store concluída.", 88);
+
+            return result;
+        }
+
+        private async Task MonitorProgressAsync(Task operationTask, double startProgress, double maximumProgress, string operation, CancellationToken cancellationToken)
+        {
+            double progress = startProgress;
+
+            while (!operationTask.IsCompleted)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                _dashboardStateService.UpdateOperation(operation, progress);
+
+                await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
+
+                progress += 1;
+
+                if (progress > maximumProgress)
+                {
+                    progress = maximumProgress;
+                }
+            }
+        }
 
         private static IntegrityScanResult CreateResult(IntegrityStatus status, string message, IntegrityScanResult sfcResult, DateTimeOffset startedAt)
         {
